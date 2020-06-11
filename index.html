@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Game "Towns" on JS</title>
+    <style type="text/css">
+        .wrap {
+            width: 600px;
+            margin: 20px auto;
+            border: 2px solid #ccc;
+            padding: 20px;
+            min-height: calc(100vh - 40px);
+            position: relative;
+        }
+
+        .send-block input[type="text"] {
+            width: 100%;
+            padding: 4px 20px;
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+
+        .send-block {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            left: 20px;
+        }
+
+        .message-block {
+            min-height: calc(100vh - 80px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        .message {
+            padding: 10px 25px;
+            border-radius: 19px;
+        }
+
+        .right{
+            float: right;
+            background: #e6e1e1;
+        }
+
+        .left {
+            float: left;
+            background-color: green;
+        }
+
+        .message-line {
+            width: 100%;
+            display: table;
+            margin-bottom: 7px;
+        }
+
+        button {
+            position: absolute;
+            right: 20px;
+            top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+
+
+<div class="wrap">
+    <div class="message-block">
+        <div class="message-line">
+            <div class="right message">Го играть</div>
+        </div>
+    </div>
+    <div class="send-block">
+        <form class="form">
+            <input type="text" name="town" class="sendInput" placeholder="Send town" />
+            <button type="submit">Отправить</button>
+        </form>
+    </div>
+    
+</div>
+
+<script>
+    'use strict';
+
+    window.addEventListener('DOMContentLoaded', () => {
+
+        const wrap = document.querySelector('.wrap'), 
+            form = wrap.querySelector('.form'),
+            input = wrap.querySelector('.sendInput'),
+            messageBlock = wrap.querySelector('.message-block'),
+            sendBlock = wrap.querySelector('.send-block');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const sendMeTown = input.value,
+                  result = myAnswer(sendMeTown);
+
+            if (result.error){
+                const errorMessage = document.createElement('div'),
+                      townMessage = document.createElement('div');
+                
+                townMessage.innerHTML = `
+                    <div class="message-line">
+                        <div class="message left">${result.town}</div>
+                    </div>`;
+                messageBlock.append(townMessage);
+
+                errorMessage.innerHTML = `
+                    <div class="message-line">
+                        <div class="message right">${result.message}</div>
+                    </div>`;
+                messageBlock.append(errorMessage);
+            } else if (result.cError) {
+                const errorMessage = document.createElement('div'),
+                      townMessage = document.createElement('div');
+                
+                townMessage.innerHTML = `
+                    <div class="message-line">
+                        <div class="message left">${result.town}</div>
+                    </div>`;
+                messageBlock.append(townMessage);
+
+                errorMessage.innerHTML = `
+                    <div class="message-line">
+                        <div class="message right">${result.cMessage}</div>
+                    </div>`;
+                messageBlock.append(errorMessage);
+                sendBlock.style.display = 'none';
+            }
+            else {
+                const errorMessage = document.createElement('div'),
+                      townMessage = document.createElement('div');
+                
+                townMessage.innerHTML = `
+                    <div class="message-line">
+                        <div class="message left">${result.town}</div>
+                    </div>
+                    <div class="message-line">
+                        <div class="message right">${result.cTown}</div>
+                    </div>`;
+                towns.splice(towns.indexOf(result.cTown), 1);
+                messageBlock.append(townMessage);
+            }
+
+            
+
+            form.reset();
+                
+
+        })
+
+        let answerK = false, //Ответ компьютера
+            //Список городов
+            towns = ['Нальчик', 'Махачкала', 'Москва', 'Анапа', 'Афины', 'Курск', 'Минск', 'Воркута', 'Киев', 'Владивосток']
+
+        const errorLetter = ['ь', 'ъ', 'ы', 'ё', 'э']; //Массив букв на замену
+
+        //Проверяем длину введеного игроком города
+        const checkedLengthTown = str => {
+            return str.length < 3;
+        }
+
+
+        const myAnswer = town => {
+            if (checkedLengthTown(town)) {
+                return {
+                    'error': true,
+                    'message': 'Название города должно быть больше двух символов!'
+                }
+            }
+
+            const lowerCaseTowns = towns.map(item => item.toLowerCase())
+
+            if (lowerCaseTowns.indexOf(town.toLowerCase()) === -1) {
+                return {
+                    'error': true,
+                    'town': town,
+                    'message': 'В базе нет такого города или он уже был назван!'
+                }
+            }
+
+            if (answerK){
+                const lastLetter = answerK.length - 1;
+                if (errorLetter.indexOf(lastLetter) > -1) {
+                    lastLetter = answerK.length - 2;
+                }
+                    
+
+                if (town[0].toLowerCase() != answerK[answerK.length - 1].toLowerCase()){
+                    return {
+                        'error': true,
+                        'town': town,
+                        'message': 'Вы ввели город не на ту букву!'
+                    } 
+                } else {
+                    const cAnswer = compAnswer(town);
+                    return {
+                        'error': false,
+                        'town': town,
+                        'cTown': cAnswer.town,
+                        'cError': cAnswer.error,
+                        'cMessage': cAnswer.message,
+                    } 
+                }
+
+            } else {
+                const cAnswer = compAnswer(town);
+                return {
+                    'error': false,
+                    'town': town,
+                    'cTown': cAnswer.town,
+                    'cError': cAnswer.error,
+                    'cMessage': cAnswer.message,
+                } 
+            }
+        }
+
+        const compAnswer = town => {
+            let trueTown,
+                lastLetter = town.length - 1;
+            
+            if (errorLetter.indexOf(town[lastLetter]) > -1){
+                lastLetter = town.length - 2;
+            }                
+            
+            towns.splice(towns.indexOf(town), 1);
+
+            trueTown = towns.filter(item => {
+                return item[0].toLowerCase() == town[lastLetter].toLowerCase();
+            })
+
+            if(trueTown.length == 0) {
+                return {
+                    'error': true,
+                    'message': 'Ты победил!',
+                    'town': '',
+                }
+            } else {
+                answerK = trueTown[0];
+                return {
+                    'town':trueTown[0],
+                    'error': false,
+                    'message': ''
+                };
+            }
+
+        }
+    });
+</script>
+
+</body>
+
+</html>
